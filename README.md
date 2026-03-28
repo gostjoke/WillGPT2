@@ -1,6 +1,7 @@
 uv pip install torch --torch-backend=auto
 
 # WillGPT2
+Tien-Wei Hsu First trained LLM
 
 A minimal GPT-style language model implemented in **PyTorch**.  
 This project trains a small transformer language model on the **WikiText-2 dataset** and supports **CUDA GPU acceleration**.
