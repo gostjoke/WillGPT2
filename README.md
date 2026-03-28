@@ -45,3 +45,26 @@ Token Prediction
 
 # Dataset
 WikiText-2
+
+### version 2
+add checkpoint and improve the train process, add drop
+
+QK^T
+ ↓
+softmax
+ ↓
+dropout      ← 這裡
+ ↓
+attention @ V
+ ↓
+linear projection
+ ↓
+dropout      ← 這裡
+
+### 作用是什麼？
+
+Dropout 在 Attention 裡主要是：
+
+防止 overfitting
+讓模型不要過度依賴某些 token
+提高泛化能力

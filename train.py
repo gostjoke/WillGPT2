@@ -7,50 +7,83 @@ from dataset import TextDataset
 from model import GPT
 
 
-dataset = TextDataset()
+def main():
 
-loader = DataLoader(
-    dataset,
-    batch_size=config.batch_size,
-    shuffle=True,
-    num_workers=4,
-    pin_memory=True,
-    persistent_workers=True
-)
+    print("torch version:", torch.__version__)
+    print("cuda available:", torch.cuda.is_available())
 
-model = GPT().to(config.device)
+    if torch.cuda.is_available():
+        print("GPU:", torch.cuda.get_device_name(0))
 
-optimizer = torch.optim.AdamW(
-    model.parameters(),
-    lr=config.learning_rate
-)
+    dataset = TextDataset()
 
+    loader = DataLoader(
+        dataset,
+        batch_size=config.batch_size,
+        shuffle=True,
+        num_workers=4,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2
+    )
 
-step = 0
+    model = GPT().to(config.device)
+    model.train()
 
-for epoch in range(1000):
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=config.learning_rate
+    )
 
-    for x, y in loader:
+    # mixed precision (提升速度)
+    scaler = torch.cuda.amp.GradScaler()
 
-        x = x.to(config.device)
-        y = y.to(config.device)
+    step = 0
 
-        logits, loss = model(x, y)
+    pbar = tqdm(total=config.max_iters)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    for epoch in range(1000):
 
-        if step % 100 == 0:
-            print("step", step, "loss", loss.item())
+        for x, y in loader:
 
-        step += 1
+            x = x.to(config.device, non_blocking=True)
+            y = y.to(config.device, non_blocking=True)
+
+            with torch.cuda.amp.autocast():
+
+                logits, loss = model(x, y)
+
+            optimizer.zero_grad(set_to_none=True)
+
+            scaler.scale(loss).backward()
+
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+
+            scaler.step(optimizer)
+            scaler.update()
+
+            if step % 100 == 0:
+                print("step", step, "loss", loss.item())
+
+            # checkpoint
+            if step % 1000 == 0 and step > 0:
+                torch.save(model.state_dict(), f"checkpoint_{step}.pt")
+
+            step += 1
+            pbar.update(1)
+
+            if step >= config.max_iters:
+                break
 
         if step >= config.max_iters:
             break
 
-    if step >= config.max_iters:
-        break
+    pbar.close()
+
+    torch.save(model.state_dict(), f"WillGPT_v{config.model_save_version}.pt.pt")
+
+    print("training finished")
 
 
-torch.save(model.state_dict(), "model.pt")
+if __name__ == "__main__":
+    main()

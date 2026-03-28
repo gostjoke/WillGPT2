@@ -30,8 +30,8 @@ import config
 device = config.device
 
 model = GPT().to(device)
-model.load_state_dict(torch.load("model.pt", map_location=device))
 
+model.load_state_dict(torch.load(f"WillGPT_v{config.model_save_version}.pt", map_location=device))
 model.eval()
 
 enc = tiktoken.get_encoding("gpt2")
@@ -42,13 +42,19 @@ tokens = enc.encode(prompt)
 
 x = torch.tensor(tokens).unsqueeze(0).to(device)
 
+max_new_tokens = 100
+temperature = 0.8 # temperature controls the randomness of the generated text. Higher values (e.g., 1.0) produce more random output, while lower values (e.g., 0.5) produce more deterministic output.
+if temperature <= 0:
+    raise ValueError("Temperature must be greater than 0")
+
+
 with torch.no_grad():
 
-    for _ in range(50):
+    for _ in range(max_new_tokens):
 
         logits, _ = model(x[:, -config.block_size:])
 
-        logits = logits[:, -1, :]
+        logits = logits[:, -1, :] / temperature
 
         probs = torch.softmax(logits, dim=-1)
 

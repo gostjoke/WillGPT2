@@ -17,6 +17,9 @@ class CausalSelfAttention(nn.Module):
 
         self.proj = nn.Linear(config.n_embd, config.n_embd)
 
+        self.attn_drop = nn.Dropout(0.1)   # version 2 add
+        self.resid_drop = nn.Dropout(0.1)  # version 2 add
+
         self.n_head = config.n_head
         self.head_dim = config.n_embd // config.n_head
 
@@ -46,13 +49,15 @@ class CausalSelfAttention(nn.Module):
         )
 
         att = F.softmax(att, dim=-1)
+
+        att = self.attn_drop(att) # version 2 add
         att = torch.nan_to_num(att)  # guard against all-masked rows producing NaN
 
         y = att @ v
 
         y = y.transpose(1,2).contiguous().view(B,T,C)
 
-        y = self.proj(y)
+        y = self.resid_drop(self.proj(y))  # version 2 fix  y = self.proj(y)
 
         return y
 

@@ -1,13 +1,13 @@
 # config.py
 
-
+model_save_version = 2
 vocab_size = 50257
 
 block_size = 128
 
-n_layer = 4
-n_head = 4
-n_embd = 256
+n_layer = 8
+n_head = 8
+n_embd = 512
 
 batch_size = 32
 learning_rate = 3e-4

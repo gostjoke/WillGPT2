@@ -11,7 +11,7 @@ class TextDataset(Dataset):
         dataset = load_dataset(
             "wikitext",
             "wikitext-2-raw-v1",
-            split="train"
+            split="train",
         )
 
         text = "\n".join(dataset["text"])
