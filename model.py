@@ -45,7 +45,7 @@ class CausalSelfAttention(nn.Module):
 
         att = att.masked_fill(
             self.mask[:,:,:T,:T] == 0,
-            float('-inf')
+            float('-inf') 
         )
 
         att = F.softmax(att, dim=-1)
